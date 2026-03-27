@@ -13,7 +13,8 @@ dependencies=[
 ]
 
 [project.scripts]
-beeb_speech_encode = 'scripts.encode:main_cli'
+beeb_speech_encode     = 'scripts.encode:main_cli'
+beeb_speech_encode_opt = 'scripts.encode_opt:main_cli'
 
 [project.urls]
 "Homepage" = 'https://github.com/quincerly/bbc-speech-kit-encoder'

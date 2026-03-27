@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name='BBC_Micro_Speech_Kit_Encoder'
+version='0.1.0'
+description='Encodes a sound sample for the BBC Micro Speech kit creating a bootable disk image for playing on a real Beeb.'
+authors= [ { name = "Dan Rolfe", email = 'git@rolfe.email' } ]
+dependencies=[
+    "numpy",
+    "scipy",
+]
+
+[project.scripts]
+beeb_speech_encode = 'scripts.encode:main_cli'
+
+[project.urls]
+"Homepage" = 'https://github.com/quincerly/bbc-speech-kit-encoder'

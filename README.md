@@ -64,7 +64,3 @@ into bytes (so the first parameter bit is bit 7 of byte 0). Each byte must
 therefore be **bit-reversed** before storage in the `DATA` statements. This is
 equivalent to what PROCSPEAK's `REVERSE` machine-code routine does.
 
-## Version history
-
-See git log for the progression of encoding improvements validated on real
-BBC Model B hardware.

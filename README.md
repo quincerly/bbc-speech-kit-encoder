@@ -17,7 +17,7 @@ beeb_speech_encode input.wav output.ssd
 ```
 
 The resulting `.ssd` file boots with **Shift+Break** on a BBC Model B with the
-Speech System cartridge fitted. It chains a BBC BASIC program (`PLAYER`) which
+Speech System fitted. It chains a BBC BASIC program (`PLAYER`) which
 streams the LPC data to the chip via `SOUND &FF60` / `SOUND &FF00`.
 
 ## Options

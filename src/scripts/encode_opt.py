@@ -37,7 +37,7 @@ from scripts.encode import (
     bbcLine, load_wav,
 )
 from scripts.synth import synthesise
-from scripts.metrics import lsd, count_beep_frames
+from scripts.metrics import lsd
 
 
 # ── Fast autocorrelation via FFT ──────────────────────────────────────────────
@@ -193,18 +193,15 @@ def build_ssd(data_bytes, output_path):
 # ── Worker (must be top-level for multiprocessing pickle) ─────────────────────
 
 def _evaluate_config(args):
-    """Evaluate one parameter combination. Returns result tuple."""
+    """Evaluate one parameter combination. Returns (lsd_mean, lsd_med, params, data_bytes)."""
     orig, preemph, bwe, voiced_thresh, max_f0, max_gap = args
     frames     = analyse(orig, preemph, bwe, voiced_thresh, 75, max_f0, max_gap)
     data_bytes = encode_frames(frames)
     synth_pcm  = synthesise(data_bytes)
-    beeps      = count_beep_frames(orig, synth_pcm)
-    params     = dict(preemph=preemph, bwe=bwe, voiced_thresh=voiced_thresh,
-                      max_f0=max_f0, max_gap=max_gap)
-    if beeps > 0:
-        return (float('inf'), float('inf'), beeps, params, data_bytes)
     lsd_mean, lsd_med = lsd(orig, synth_pcm)
-    return (lsd_mean, lsd_med, beeps, params, data_bytes)
+    params = dict(preemph=preemph, bwe=bwe, voiced_thresh=voiced_thresh,
+                  max_f0=max_f0, max_gap=max_gap)
+    return (lsd_mean, lsd_med, params, data_bytes)
 
 
 # ── Parameter grid ────────────────────────────────────────────────────────────
@@ -233,34 +230,27 @@ def optimise(orig, n_workers=None, verbose=False):
         print(f"Searching {len(tasks)} combinations "
               f"({n_workers} worker{'s' if n_workers>1 else ''})...")
         print(f"{'preemph':>8} {'bwe':>6} {'vthresh':>8} {'max_f0':>7} "
-              f"{'gap':>4} {'LSD_mn':>8} {'LSD_md':>8} {'beeps':>6}")
+              f"{'gap':>4} {'LSD_mn':>8} {'LSD_md':>8}")
 
     best_lsd = float('inf'); best_data = None; best_params = None
-    best_metrics = None; n_beep = 0
+    best_metrics = None
 
     with multiprocessing.Pool(processes=n_workers) as pool:
         for result in pool.imap(_evaluate_config, tasks, chunksize=4):
-            lsd_mean, lsd_med, beeps, params, data_bytes = result
+            lsd_mean, lsd_med, params, data_bytes = result
             if verbose:
-                if beeps > 0:
-                    print(f"{params['preemph']:>8.2f} {params['bwe']:>6.3f} "
-                          f"{params['voiced_thresh']:>8.2f} {params['max_f0']:>7} "
-                          f"{params['max_gap']:>4}  (beeps: {beeps})")
-                else:
-                    m = ' <-- best' if lsd_mean < best_lsd else ''
-                    print(f"{params['preemph']:>8.2f} {params['bwe']:>6.3f} "
-                          f"{params['voiced_thresh']:>8.2f} {params['max_f0']:>7} "
-                          f"{params['max_gap']:>4} {lsd_mean:>8.3f} "
-                          f"{lsd_med:>8.3f} {beeps:>6}{m}")
-            if beeps > 0:
-                n_beep += 1; continue
+                m = ' <-- best' if lsd_mean < best_lsd else ''
+                print(f"{params['preemph']:>8.2f} {params['bwe']:>6.3f} "
+                      f"{params['voiced_thresh']:>8.2f} {params['max_f0']:>7} "
+                      f"{params['max_gap']:>4} {lsd_mean:>8.3f} "
+                      f"{lsd_med:>8.3f}{m}")
             if lsd_mean < best_lsd:
                 best_lsd = lsd_mean; best_data = data_bytes
                 best_params = params
                 best_metrics = {'lsd_mean': lsd_mean, 'lsd_med': lsd_med}
 
     if verbose:
-        print(f"\nSearched {len(tasks)}, skipped {n_beep} with beeps.")
+        print(f"\nSearched {len(tasks)} configurations.")
     return best_data, best_params, best_metrics
 
 

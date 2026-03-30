@@ -13,7 +13,15 @@ from scipy import signal as scipy_signal
 TARGET_SR = 8000
 FRAME_SAMPLES = 200
 
-ACORN_E_RAW = np.array([0,52,87,123,174,246,348,491,694,981,1385,1957,2764,3904,5514,7789])
+# Energy table — chip ROM values from MAME/BeebEm (energytable[i] >> 6).
+# Index 0 = silence, index 15 = stop frame.
+# These are the actual TMS5220 gain values used during synthesis.
+# The Acorn Appendix D table is a ~17x scaled version of the same values
+# and gives the same quantisation indices, but using the chip values here
+# keeps encoding and synthesis on a consistent scale.
+_MAME_ENERGY_RAW = [0x0000,0x00C0,0x0140,0x01C0,0x0280,0x0380,0x0500,0x0740,
+                    0x0A00,0x0E40,0x1440,0x1C80,0x2840,0x38C0,0x5040,0x7FC0]
+ACORN_E_RAW = np.array([v >> 6 for v in _MAME_ENERGY_RAW])
 # Pitch period table — values are sample periods at 8kHz (index 0 = unvoiced).
 # These are the actual TMS5220 chip ROM values from MAME/BeebEm, derived by
 # decapping the chip. The Acorn Speech System User Guide (Appendix D) documents
@@ -47,8 +55,12 @@ def rev(b):
 def quantise(v, t): return int(np.argmin(np.abs(t-v)))
 
 def energy_idx(e):
-    if e < ACORN_E_RAW[1]/8192: return 0
-    return min(range(1,15), key=lambda i: abs(e-ACORN_E_RAW[i]/8192))
+    # Scale RMS to MAME gain range (0-511 = 9-bit).
+    # The TMS5220 encodes energy on a roughly log scale;
+    # we find the table entry closest to e * 512.
+    e_scaled = e * 512.0
+    if e_scaled < ACORN_E_RAW[1]: return 0
+    return min(range(1, 15), key=lambda i: abs(e_scaled - ACORN_E_RAW[i]))
 
 def pitch_idx(f0):
     if f0 <= 0: return 0

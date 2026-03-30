@@ -14,10 +14,15 @@ TARGET_SR = 8000
 FRAME_SAMPLES = 200
 
 ACORN_E_RAW = np.array([0,52,87,123,174,246,348,491,694,981,1385,1957,2764,3904,5514,7789])
-ACORN_P = [0,15,17,18,19,20,21,22,23,24,25,26,27,28,29,30,
-           31,32,33,34,36,38,40,41,42,44,46,48,50,52,53,56,
-           58,60,62,65,68,70,72,76,80,84,86,91,94,98,101,105,
-           109,114,118,122,127,132,137,142,148,153,159,165,172,178,186,194]
+# Pitch period table — values are sample periods at 8kHz (index 0 = unvoiced).
+# These are the actual TMS5220 chip ROM values from MAME/BeebEm, derived by
+# decapping the chip. The Acorn Speech System User Guide (Appendix D) documents
+# a slightly different table; the chip ROM values are used here as they reflect
+# what the hardware actually does.
+ACORN_P = [0,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,
+           31,32,33,34,35,36,37,38,39,40,41,42,43,45,47,49,
+           51,53,54,57,59,61,63,66,69,71,73,77,79,81,85,87,
+           92,95,99,102,106,110,115,119,123,128,133,138,143,149,154,160]
 ACORN_K = [
     np.array([-501,-498,-497,-495,-493,-491,-488,-482,-478,-474,-469,-464,-459,-452,-445,-437,
               -412,-380,-339,-288,-227,-158,-81,-1,80,157,226,287,337,379,411,436])/512.,
